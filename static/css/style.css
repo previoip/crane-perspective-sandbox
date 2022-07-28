@@ -1,0 +1,39 @@
+html, body {width: 100%; min-height: 100vh;}
+body {background-color: black; color: ghostwhite; font-family: Arial, Helvetica, sans-serif	;}
+#panel {
+  right: 20px;
+}
+
+#sceneStat {
+  bottom: 20px;
+}
+
+#sceneStat, #panel {
+  position: absolute;
+  background-color: #ffffff3b;
+  padding: .4rem .2rem;
+  max-width: 400px;
+  right: 20px;
+}
+
+.slider {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+#panel * {
+  margin: 0;
+  padding: 0;
+}
+input[type='range'] {
+  width: 100%;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
