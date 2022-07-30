@@ -1,6 +1,7 @@
 html, body {
   width: 100%; 
   min-height: 100vh;
+  margin: 0;
 }
 
 body {
@@ -13,47 +14,22 @@ body {
   outline: 1px dashed greenyellow;
 }
 
-#viewports {
-  display: flex;
-  flex-direction: row;
-  width: auto;
-  min-height: 100vh;
-}
-
-
-.slider {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-#windowOverall {
-  background-color: aqua;
-}
-
-#windowProjection {
-  background-color: magenta;
-}
-
-#sceneStat {
-  bottom: 20px;
-  position: fixed;
-  background-color: #ffffff3b;
-  padding: .4rem .2rem;
-  max-width: 400px;
-  right: 20px;
-}
-
-/* 
-input[type='range'] {
+#canvas {
   width: 100%;
+  height: 100%;
+  display: block;
 }
 
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+#viewports {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
 }
-input[type=number] {
-  -moz-appearance: textfield;
-} */
+
+#viewports>div {
+  width: 100%;
+  height: 100%;
+}
