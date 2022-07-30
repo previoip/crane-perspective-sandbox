@@ -9,12 +9,15 @@ const body = document.body;
 const screen_width = window.innerWidth;
 const screen_height = window.innerHeight;
 const screen_aspect_ratio = screen_width/screen_height
+const n_cam = 2;
 
 // DOM-Panel/window elements
-const Panel = body.children.panel;
-const ViewOverall = body.children.viewOverall;
-
-// wrappers
+const sceneStatPanel = body.children.sceneStat;
+const windowViewports = body.children.viewports;
+const rendererOverall = appendRendererElNode(windowViewports, n_cam);
+const rendererPerspective = appendRendererElNode(windowViewports, n_cam);
+const renderers = [rendererOverall, rendererPerspective]
+// wrappers, namepspaces
 const degToRad = (x) => { return THREE.MathUtils.degToRad(x) }
 class CameraWrapper {
   constructor(name, pos = new Vec3(0,0,10), rot = new Eul3(0,0,0), clip = new Vec2(0.1, 100)) {
@@ -27,47 +30,75 @@ class CameraWrapper {
     this.aspect_ratio = 1 
     this.o = new THREE.PerspectiveCamera(this.fov, this.aspect_ratio, this.clip.x, this.clip.y)
     this.h = new THREE.CameraHelper(this.o)
-    this.update()
+    this.updateTransformation()
   }
 
-  update () {
+  updateTransformation() {
     this.o.position.set(this.pos.x, this.pos.y, this.pos.z)
+    this.o.rotation.set(this.rot.x, this.rot.y, this.rot.z)
+  }
+
+  updateIntrinsic(){
+    this.o.fov = this.fov
+    this.o.aspect = this.aspect_ratio
+    this.o.updateProjectionMatrix() 
   }
 }
 
 // THREE inits
 const scene = new THREE.Scene();
-const ViewOveralRenderer = appendRendererElNode(ViewOverall);
 const cameraOverall = new CameraWrapper('overall')
+const cameraTest = new CameraWrapper('test')
+const cameras = [cameraOverall, cameraTest]
+
+cameras.forEach((e)=>{e.o.aspect = windowViewports.clientWidth/(windowViewports.clientHeight*n_cam); e.updateIntrinsic()})
+
+
+
 
 // entrypoint
 main()
 mainloop()
 
 function main() {
-  const axesHelper = new THREE.AxesHelper(40)
+  {
+    const control = new OrbitControls(cameraOverall, rendererOverall.domElement)
+    control.update()
+  }
+  {
+    const axesHelper = new THREE.AxesHelper(40);
+    scene.add( axesHelper )
+    scene.add( cameraTest.h )
+  }
+  {
+    const basic_material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    const geom = new THREE.BoxGeometry(1,1,1);
+    const cube = new THREE.Mesh( geom, basic_material );
+    scene.add( cube )
+  }
+  {
+    const light = new THREE.PointLight( 0xffffff, 1, 100 );
+    light.position.set( 50, 50, 50 );
+    scene.add( light );
+  }
   
-  const geom = new THREE.BoxGeometry(1,1,1);
-  const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-  const cube = new THREE.Mesh( geom, material );
-  scene.add( cameraOverall.h )
-  scene.add( axesHelper )
-  scene.add( cube )
-
   const gui = new GUI();
   const cam1 = gui.addFolder('Overall View Camera Control')
 
 }
 
+
 function mainloop() {
-  ViewOveralRenderer.render( scene, cameraOverall.o )
+  rendererOverall.render( scene, cameraOverall.o )
+  rendererPerspective.render( scene, cameraTest.o )
+
   requestAnimationFrame( mainloop );
 }
 
 
-function appendRendererElNode(e) {
+function appendRendererElNode(e, n=1) {
   const renderer = new THREE.WebGLRenderer();
-  const w = e.clientWidth;
+  const w = e.clientWidth/n;
   const h = e.clientHeight;
   renderer.setSize(w, h)
   e.appendChild(renderer.domElement)

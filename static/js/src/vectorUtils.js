@@ -8,12 +8,14 @@ class Base3 {
     this.x = x; 
     this.y = y; 
     this.z = z;
+    return this
   }
 
   offset(x, y, z) {
     this.x += x;
     this.y += y;
     this.z += z;
+    return this
   }
 }
 
@@ -26,11 +28,13 @@ class Base2 {
   set(x, y) {
     this.x = x; 
     this.y = y; 
+    return this
   }
 
   offset(x, y) {
     this.x += x;
     this.y += y;
+    return this
   }
 }
 
@@ -39,11 +43,13 @@ class Vec3 extends Base3 {
   setPolar(radius, theta, gamma) {
     const [x,y,z] = this.#polarToCartesian(radius, theta, gamma)
     this.set(x,y,z)
+    return this
   }
 
   offsetPolar(radius, theta, gamma) {
     const [x,y,z] = this.#polarToCartesian(radius, theta, gamma)
     this.offset(x,y,z)
+    return this
   }
 
   get coords() {
@@ -56,8 +62,8 @@ class Vec3 extends Base3 {
 
   #polarToCartesian(radius, theta, gamma) {
     return [
-    /*x*/ radius * Math.sin(theta) * Math.cos(gamma),
-    /*y*/ radius * Math.cos(theta) * Math.cos(gamma),
+    /*x*/ radius * Math.cos(theta) * Math.cos(gamma),
+    /*y*/ radius * Math.sin(theta) * Math.cos(gamma),
     /*z*/ radius * Math.sin(gamma)
     ]
   }
@@ -98,12 +104,28 @@ class Eul3 extends Base3 {
   get angles() {
     return [this.x, this.y, this.z]
   }
+
+  norm() {
+    ['x', 'y', 'z'].forEach( (e) =>{
+        if(this[e] > Math.PI*2){
+        this[e] = this[e]%Math.PI*2
+      }
+    })
+  }
 }
 
 // impl
 class Eul2 extends Base2 {
   get angles() {
     return [this.x, this.y]
+  }
+
+  norm() {
+    ['x', 'y'].forEach( (e) =>{
+        if(this[e] > Math.PI*2){
+        this[e] = this[e]%Math.PI*2
+      }
+    })
   }
 }
 
