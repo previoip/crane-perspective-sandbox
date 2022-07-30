@@ -1,8 +1,11 @@
 import * as THREE from 'three'
 import { OrbitControls  } from 'https://unpkg.com/three@0.132.2/examples/jsm/controls/OrbitControls.js'
 import { GUI  } from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/dat.gui.module'
+import Stats from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/stats.module'
+import { Struct } from './src/structs.js';
 // import { Vec2, Vec3, Eul3 } from './src/vectorUtils.js';
 
+const propertyPointer = Struct('value')
 
 // entrypoint
 function main() {
@@ -21,16 +24,18 @@ function main() {
   const renderer = new THREE.WebGLRenderer({ canvas });
   const cameraOverall = new THREE.PerspectiveCamera( 50, screen_aspect_ratio, 0.1, 100 )
   const cameraOverallHelper = new THREE.CameraHelper(cameraOverall)
-  const cameraPerspective = new THREE.PerspectiveCamera( 50, screen_aspect_ratio, 0.1, 100 )
+  const cameraPerspective = new THREE.PerspectiveCamera( 10, screen_aspect_ratio, 0.1, 40 )
   const cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective )
+  const stats = Stats()
 
   //random setups
   {
     cameraOverall.position.set( 0, 10, 30 );
-    cameraPerspective.position.set( 20, 0, 0 );
+    cameraPerspective.position.set( 20, 20, 20 );
     scene.background = new THREE.Color( 'black' )
-    scene.add( cameraOverallHelper )
+    // scene.add( cameraOverallHelper )
     scene.add( cameraPerspectiveHelper )
+    document.body.appendChild( stats.dom )
   }
 
   // wrappers, namepspaces, misc: gui helper
@@ -59,21 +64,6 @@ function main() {
   }
 
   // === setups
-  // controls, helper
-  {
-    const controls = new OrbitControls(cameraOverall, windowViewportOverall);
-    controls.target.set(0, 0, 0);
-    controls.update();
-  }
-  {
-    const controls = new OrbitControls(cameraPerspective, windowViewportProjection);
-    controls.target.set(0, 0, 0);
-    controls.update();
-  }
-  {
-    const axesHelper = new THREE.AxesHelper(40);
-    scene.add( axesHelper )
-  }
 
   // objects, geoms, meshes
   {
@@ -83,13 +73,66 @@ function main() {
     scene.add( cube )
   }
   {
-    const light = new THREE.PointLight( 0xffffff, 1, 100 );
-    light.position.set( 50, 50, 50 );
-    scene.add( light );
+    const planeSize = 30;
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.NearestFilter;
+    const repeats = planeSize / 2;
+    texture.repeat.set(repeats, repeats);
+    const planeGeo = new THREE.PlaneBufferGeometry(planeSize, planeSize);
+    const planeMat = new THREE.MeshPhongMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+      // wireframe: true
+    });
+    const mesh = new THREE.Mesh(planeGeo, planeMat);
+    mesh.rotation.x = Math.PI * -.5;
+    scene.add(mesh);
   }
-  
-  const gui = new GUI();
-  const cam1 = gui.addFolder( 'Overall View Camera Control' )
+  {
+    const color = 0xFFFFFF;
+    const intensity = 1;
+    const light = new THREE.DirectionalLight(color, intensity);
+    light.position.set(0, 10, 20);
+    light.target.position.set(-5, 0, 0);
+    scene.add(light);
+    scene.add(light.target);
+  }
+
+  // controls, helper
+  {
+    const controls = new OrbitControls(cameraOverall, windowViewportOverall);
+    controls.target.set(0, 0, 0);
+    controls.enableDamping = true
+    controls.dampingFactor = .1
+    controls.update();
+  }
+  {
+    const controls = new OrbitControls(cameraPerspective, windowViewportProjection);
+    controls.target.set(0, 0, 0);
+    controls.enabled = false;
+    controls.update();
+  }
+  {
+    const axesHelper = new THREE.AxesHelper(40);
+    scene.add( axesHelper )
+  }
+  {
+    const gui = new GUI();
+    const cameraPerspective_gui_controls = {
+      get posz() {return cameraPerspective.position.y},
+      set posz(v) {cameraPerspective.position.y = v; this.update()},
+
+      update() {
+        cameraPerspective.updateProjectionMatrix()
+      }
+    }
+    const gui_cam = gui.addFolder( 'Camera Control' )
+    gui_cam.add(cameraPerspective, 'fov', 1, 40, 0.01)
+    gui_cam.add(cameraPerspective_gui_controls, 'posz', 1, 40, 0.01)
+  }
 
 
   // mainloop
@@ -110,16 +153,7 @@ function main() {
       cameraPerspective.updateProjectionMatrix()
       renderer.render( scene, cameraPerspective )
     }
-    {
-      const color = 0xFFFFFF;
-      const intensity = 1;
-      const light = new THREE.DirectionalLight( color, intensity );
-      light.position.set(0, 10, 0);
-      light.target.position.set(-5, 0, 0);
-      scene.add( light );
-      scene.add( light.target );
-    }
-  
+    stats.update()
     requestAnimationFrame( mainloop );
   }
   
