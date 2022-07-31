@@ -96,7 +96,7 @@ function main() {
     scene.add( cube )
   }
   {
-    const o = loadGLFT('./static/blob/crane_full.glb')
+    const o = loadGLFT('./crane-perspective-sandbox/static/blob/crane_full.glb')
     console.log(o)
   }
   {
