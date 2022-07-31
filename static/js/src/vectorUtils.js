@@ -17,6 +17,14 @@ class Base3 {
     this.z += z;
     return this
   }
+
+  setArr(a = [0, 0, 0]) {
+    this.set(a[0], a[1], a[2])
+  }
+
+  offsetArr(a = [0, 0, 0]) {
+    this.offset(a[0], a[1], a[2])
+  }
 }
 
 class Base2 {
@@ -35,6 +43,14 @@ class Base2 {
     this.x += x;
     this.y += y;
     return this
+  }
+
+  setArr(a = [0, 0]) {
+    this.set(a[0], a[1])
+  }
+
+  offsetArr(a = [0, 0]) {
+    this.offset(a[0], a[1])
   }
 }
 

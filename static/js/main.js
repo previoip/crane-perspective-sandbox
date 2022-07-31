@@ -2,10 +2,21 @@ import * as THREE from 'three'
 import { OrbitControls  } from 'https://unpkg.com/three@0.132.2/examples/jsm/controls/OrbitControls.js'
 import { GUI  } from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/dat.gui.module'
 import Stats from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/stats.module'
-import { Struct } from './src/structs.js';
+// import { Struct } from './src/structs.js';
 // import { Vec2, Vec3, Eul3 } from './src/vectorUtils.js';
 
-const propertyPointer = Struct('value')
+// options
+const opt = {
+  camPersp: {fov: 20, x: 20, y: 10, z: 20},
+  camOvral: {fov: 40, x: 20, y: 10, z: -20},
+  targHlpr: {x: 0, y: 0, z: 0}
+}
+
+// deep copy of opt, used for prop resets control in gui
+const ropt = JSON.parse(JSON.stringify(opt));
+
+// => coldload options
+
 
 // entrypoint
 function main() {
@@ -22,58 +33,52 @@ function main() {
   // THREE inits
   const scene = new THREE.Scene();
   const renderer = new THREE.WebGLRenderer({ canvas });
-  const cameraOverall = new THREE.PerspectiveCamera( 50, screen_aspect_ratio, 0.1, 100 )
-  const cameraOverallHelper = new THREE.CameraHelper(cameraOverall)
-  const cameraPerspective = new THREE.PerspectiveCamera( 10, screen_aspect_ratio, 0.1, 40 )
+  const cameraOverall = new THREE.PerspectiveCamera( opt.camOvral.fov, screen_aspect_ratio, 0.1, 100 )
+  const cameraPerspective = new THREE.PerspectiveCamera( opt.camPersp.fov, screen_aspect_ratio, 0.1, 100 )
   const cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective )
+  const polarHelper = new THREE.PolarGridHelper( 20, 16, 10, 32, 'green', 'limegreen' )
+  const targetHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 2, 0xffffff )
   const stats = Stats()
+
+
 
   //random setups
   {
-    cameraOverall.position.set( 0, 10, 30 );
-    cameraPerspective.position.set( 20, 20, 20 );
-    scene.background = new THREE.Color( 'black' )
-    // scene.add( cameraOverallHelper )
-    scene.add( cameraPerspectiveHelper )
-    document.body.appendChild( stats.dom )
+    cameraOverall.position.set( opt.camOvral.x, opt.camOvral.y, opt.camOvral.z );
+    cameraPerspective.position.set( opt.camPersp.x, opt.camPersp.y, opt.camPersp.z );
+    cameraPerspective.lookAt( targetHelper.position.x, targetHelper.position.y, targetHelper.position.z )
+    // cameraPerspective.scale.set(new THREE.Vector3(.5,.5,.5))
+    scene.background = new THREE.Color( '#0f0f50' );
+    // scene.add( cameraOverallHelper );
+    polarHelper.position.set(0,.05,0)
+    scene.add( polarHelper );
+    scene.add( targetHelper );
+    scene.add( cameraPerspectiveHelper );
+    document.body.appendChild( stats.dom );
   }
 
-  // wrappers, namepspaces, misc: gui helper
+  // wrappers, namepspaces
   const degToRad = (x) => { return THREE.MathUtils.degToRad(x) }
-  class MinMaxGUIHelper {
-    constructor(obj, minProp, maxProp, minDif) {
-      this.obj = obj;
-      this.minProp = minProp;
-      this.maxProp = maxProp;
-      this.minDif = minDif;
-    }
-    get min() {
-      return this.obj[this.minProp];
-    }
-    set min(v) {
-      this.obj[this.minProp] = v;
-      this.obj[this.maxProp] = Math.max( this.obj[this.maxProp], v + this.minDif );
-    }
-    get max() {
-      return this.obj[this.maxProp];
-    }
-    set max(v) {
-      this.obj[this.maxProp] = v;
-      this.min = this.min;
-    }
-  }
+
 
   // === setups
 
   // objects, geoms, meshes
   {
-    const basic_material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
     const geom = new THREE.BoxGeometry(1,1,1);
-    const cube = new THREE.Mesh( geom, basic_material );
+    const cube = new THREE.Mesh( geom, material );
     scene.add( cube )
   }
   {
-    const planeSize = 30;
+    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    const geom = new THREE.BoxGeometry(1,1,1);
+    const targetHelper = new THREE.Mesh( geom, material );
+    scene.add( targetHelper )
+  }
+
+  {
+    const planeSize = 50;
     const loader = new THREE.TextureLoader();
     const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
     texture.wrapS = THREE.RepeatWrapping;
@@ -110,28 +115,85 @@ function main() {
     controls.update();
   }
   {
-    const controls = new OrbitControls(cameraPerspective, windowViewportProjection);
-    controls.target.set(0, 0, 0);
-    controls.enabled = false;
-    controls.update();
-  }
-  {
     const axesHelper = new THREE.AxesHelper(40);
     scene.add( axesHelper )
   }
+  // gui
   {
     const gui = new GUI();
-    const cameraPerspective_gui_controls = {
-      get posz() {return cameraPerspective.position.y},
-      set posz(v) {cameraPerspective.position.y = v; this.update()},
-
-      update() {
+    const update = () => {
+        const dist = Math.sqrt(
+          (cameraPerspective.position.x - targetHelper.position.x)**2 +
+          (cameraPerspective.position.y - targetHelper.position.y)**2 +
+          (cameraPerspective.position.z - targetHelper.position.z)**2)
+        cameraPerspective.near = Math.max(dist - 20, 0.1)
+        cameraPerspective.far  = Math.max(dist + 40, 1)
+        cameraPerspective.lookAt(targetHelper.position.x, targetHelper.position.y, targetHelper.position.z);
         cameraPerspective.updateProjectionMatrix()
+    }
+    // object wrappers
+    const cameraPerspective_gui_controls = {
+      get posx() {return cameraPerspective.position.x},
+      set posx(v) {
+        cameraPerspective.position.x = v; 
+        update()
+      },
+      get posy() {return cameraPerspective.position.y},
+      set posy(v) {
+        cameraPerspective.position.y = v; 
+        update()
+      },
+      get posz() {return cameraPerspective.position.z},
+      set posz(v) {
+        cameraPerspective.position.z = v; 
+        update()
+      },
+      reset: () => {
+        cameraPerspective.position.x = ropt.camPersp.x;
+        cameraPerspective.position.y = ropt.camPersp.y;
+        cameraPerspective.position.z = ropt.camPersp.z;
+        cameraPerspective.fov = ropt.camPersp.fov;
+        update()
       }
     }
+
+    const target_gui_controls = {
+      get posx() {return targetHelper.position.x},
+      set posx(v) {
+        targetHelper.position.x = v; 
+        update()
+      },
+      get posy() {return targetHelper.position.y},
+      set posy(v) {
+        targetHelper.position.y = v; 
+        update()
+      },
+      get posz() {return targetHelper.position.z},
+      set posz(v) {
+        targetHelper.position.z = v; 
+        update()
+      },
+      reset: () => {
+        targetHelper.position.x = ropt.targHlpr.x;
+        targetHelper.position.y = ropt.targHlpr.y;
+        targetHelper.position.z = ropt.targHlpr.z;
+        update()
+      }
+    }
+    // gui inst
     const gui_cam = gui.addFolder( 'Camera Control' )
-    gui_cam.add(cameraPerspective, 'fov', 1, 40, 0.01)
-    gui_cam.add(cameraPerspective_gui_controls, 'posz', 1, 40, 0.01)
+    gui_cam.add(cameraPerspective, 'fov', 1, 40, 0.01).listen()
+    gui_cam.add(cameraPerspective_gui_controls, 'posx', -40, 40, 0.01).name('x (m)').listen()
+    gui_cam.add(cameraPerspective_gui_controls, 'posy', 0, 20, 0.01).name('y (m)').listen()
+    gui_cam.add(cameraPerspective_gui_controls, 'posz', -40, 40, 0.01).name('z (m)').listen()
+    gui_cam.add(cameraPerspective_gui_controls, 'reset')
+    gui_cam.open()
+
+    const gui_target = gui.addFolder( 'Target Control' )
+    gui_target.add(target_gui_controls, 'posx', -10, 10, 0.01).name('x (m)').listen()
+    gui_target.add(target_gui_controls, 'posy',  0,  10, 0.01).name('y (m)').listen()
+    gui_target.add(target_gui_controls, 'posz', -10, 10, 0.01).name('z (m)').listen()
+    gui_target.add(target_gui_controls, 'reset')
   }
 
 
@@ -187,6 +249,9 @@ function main() {
   
     return width / height;
   }
+  window.addEventListener("beforeunload", function(e){
+    // save opt
+  }, false)
   console.log('if you see this: everything runs just fine')
   mainloop()
 }
