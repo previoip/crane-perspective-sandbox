@@ -11,7 +11,7 @@ import { Panel } from './src/panel.js';
 let opt = {
   camPersp: {fov: 20, x: 20, y: 10, z: 20},
   camOvral: {fov: 40, x: -20, y: 10, z: 20},
-  targHlpr: {x: 0, y: 0, z: 0}
+  targHlpr: {x: 0, y: 1, z: 0}
 }
 
 // deep copy of opt, used for prop resets control in gui
