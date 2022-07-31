@@ -24,7 +24,6 @@ if (cached) {
   opt = JSON.parse(cached)
 }
 
-console.log(opt)
 // entrypoint
 function main() {
   // DOM 
@@ -40,40 +39,45 @@ function main() {
   // THREE inits
   const scene = new THREE.Scene();
   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  const cameraOverall = new THREE.PerspectiveCamera( opt.camOvral.fov, screen_aspect_ratio, 0.1, 100 )
+  const cameraOverall = new THREE.PerspectiveCamera( opt.camOvral.fov, screen_aspect_ratio, 0.1, 300 )
   const cameraPerspective = new THREE.PerspectiveCamera( opt.camPersp.fov, screen_aspect_ratio, 0.1, 100 )
   const cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective )
   const polarHelper = new THREE.PolarGridHelper( 20, 16, 10, 32, 'green', 'limegreen' )
-  const targetHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 2, 0xff0000 )
+  const targetHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1, 0xff0000 )
+  const cameraPerspectivePositionHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 1), 20, 0xff00ff )
+  const updateCameraPerspectivePositionHelper = () => {
+    cameraPerspectivePositionHelper.position.set(
+      cameraPerspective.position.x, 
+      0, 
+      cameraPerspective.position.z
+    )
+    cameraPerspectivePositionHelper.setLength( cameraPerspective.position.y )
+  }
   const stats = Stats()
   const sceneStatsPanel = new Panel('Scene Stats', body)
 
   const sceneStatsPanelFields = {
     'viewportWindowWidth (px)': [windowViewportProjection, 'clientWidth'],
     'viewportWindowHeight (px)': [windowViewportProjection, 'clientHeight'],
+    'Camera FOV': [cameraPerspective, 'fov'],
     'Camera coord X (m)': [cameraPerspective.position, 'x'],
     'Camera coord Z (m)': [cameraPerspective.position, 'z'],
     'Camera height (m)': [cameraPerspective.position, 'y'],
   }
-
-
 
   //random setups
   {
     cameraOverall.position.set( opt.camOvral.x, opt.camOvral.y, opt.camOvral.z );
     cameraPerspective.position.set( opt.camPersp.x, opt.camPersp.y, opt.camPersp.z );
     cameraPerspective.lookAt( targetHelper.position.x, targetHelper.position.y, targetHelper.position.z )
-    // cameraPerspective.scale.set(new THREE.Vector3(.5,.5,.5))
     scene.background = new THREE.Color( '#0f0f50' );
-    // scene.add( cameraOverallHelper );
     polarHelper.position.set(0,.05,0)
     scene.add( polarHelper );
     scene.add( targetHelper );
     scene.add( cameraPerspectiveHelper );
     document.body.appendChild( stats.dom );
+    updateCameraPerspectivePositionHelper();
   }
-  
-
 
   // wrappers, namepspaces
   const degToRad = (x) => { return THREE.MathUtils.degToRad(x) }
@@ -87,7 +91,6 @@ function main() {
   }
 
   // === setups
-
   // objects, geoms, meshes
   {
     const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
@@ -96,8 +99,7 @@ function main() {
     scene.add( cube )
   }
   {
-    const o = loadGLFT('static/blob/crane_full.glb')
-    console.log(o)
+    loadGLFT('static/blob/crane_full.glb')
   }
   {
     const planeSize = 50;
@@ -120,8 +122,8 @@ function main() {
   }
   {
     const color = 0xFFFFFF;
-    const light = new THREE.DirectionalLight(color, .8);
-    const light2 = new THREE.DirectionalLight(color, .8);
+    const light = new THREE.DirectionalLight(color, .6);
+    const light2 = new THREE.DirectionalLight(color, .6);
     light.position.set(20, 30, 20);
     light.target.position.set(-5, 0, 0);
     light2.position.set(-20, 50, -20);
@@ -143,6 +145,7 @@ function main() {
   {
     const axesHelper = new THREE.AxesHelper(40);
     scene.add( axesHelper )
+    scene.add( cameraPerspectivePositionHelper )
   }
   // gui
   {
@@ -152,13 +155,20 @@ function main() {
           (cameraPerspective.position.x - targetHelper.position.x)**2 +
           (cameraPerspective.position.y - targetHelper.position.y)**2 +
           (cameraPerspective.position.z - targetHelper.position.z)**2)
-        cameraPerspective.near = Math.max(dist - 40, 0.1)
-        cameraPerspective.far  = Math.max(dist + 40, 1)
+        cameraPerspective.near = Math.max(dist - 50, 0.1)
+        cameraPerspective.far  = Math.max(dist + 50, 1)
         cameraPerspective.lookAt(targetHelper.position.x, targetHelper.position.y, targetHelper.position.z);
         cameraPerspective.updateProjectionMatrix()
+        updateCameraPerspectivePositionHelper()
+        cameraPerspectiveHelper.update()
     }
     // object controller wrappers
     const cameraPerspective_gui_controls = {
+      get fov() {return cameraPerspective.fov},
+      set fov(v) {
+        cameraPerspective.fov = v; 
+        cameraPerspectiveHelper.update();
+      },
       get posx() {return cameraPerspective.position.x},
       set posx(v) {
         cameraPerspective.position.x = v; 
@@ -217,7 +227,7 @@ function main() {
     }
     // gui inst
     const gui_cam = gui.addFolder( 'Camera Control' )
-    gui_cam.add(cameraPerspective, 'fov', 1, 100, 0.01).listen()
+    gui_cam.add(cameraPerspective_gui_controls, 'fov',  1,  120, 0.01).listen()
     gui_cam.add(cameraPerspective_gui_controls, 'posx', -40, 40, 0.01).name('x (m)').listen()
     gui_cam.add(cameraPerspective_gui_controls, 'posy', 0,   20, 0.01).name('y (m)').listen()
     gui_cam.add(cameraPerspective_gui_controls, 'posz', -40, 40, 0.01).name('z (m)').listen()
