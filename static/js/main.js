@@ -78,6 +78,7 @@ function main() {
     document.body.appendChild( stats.dom );
     updateCameraPerspectivePositionHelper();
   }
+  const controlerOrbit = new OrbitControls(cameraOverall, windowViewportOverall);
 
   // wrappers, namepspaces
   const degToRad = (x) => { return THREE.MathUtils.degToRad(x) }
@@ -136,11 +137,10 @@ function main() {
 
   // controls, helper
   {
-    const controls = new OrbitControls(cameraOverall, windowViewportOverall);
-    controls.target.set(0, 0, 0);
-    controls.enableDamping = true
-    controls.dampingFactor = .1
-    controls.update();
+    controlerOrbit.target.set(0, 0, 0);
+    controlerOrbit.enableDamping = true
+    controlerOrbit.dampingFactor = .1
+    controlerOrbit.update();
   }
   {
     const axesHelper = new THREE.AxesHelper(40);
@@ -161,7 +161,7 @@ function main() {
         cameraPerspective.updateProjectionMatrix()
         updateCameraPerspectivePositionHelper()
         cameraPerspectiveHelper.update()
-    }
+      }
     // object controller wrappers
     const cameraPerspective_gui_controls = {
       get fov() {return cameraPerspective.fov},
@@ -200,6 +200,8 @@ function main() {
         cameraOverall.fov = ropt.camOvral.fov;
         cameraOverall.lookAt(0, 0, 0);
         cameraOverall.updateProjectionMatrix()
+        controlerOrbit.target.set(0, 0, 0)
+        controlerOrbit.update()
       }
     }
     const target_gui_controls = {
