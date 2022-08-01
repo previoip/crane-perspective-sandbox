@@ -212,6 +212,33 @@ function main() {
       const guiF = gui.addFolder( 'Preview Camera Control' )
       guiF.add(cameraOverall_gui_controls, 'reset')  
     }
+
+    { // gui - helpers visibility
+      const helper_gui_controls = {
+        polarHelper: true,
+        axesHelper: true,
+        targetHelper: true,
+        cameraHelper: true,
+        cameraPositionHelper: true,
+      }
+      const guiF = gui.addFolder( 'Overlay Visibility' )
+      guiF.add(helper_gui_controls, 'axesHelper')
+        .onChange(()=>{axesHelper.visible = helper_gui_controls.axesHelper})
+        .name('origin axis');
+      guiF.add(helper_gui_controls, 'polarHelper')
+        .onChange(()=>{polarHelper.visible = helper_gui_controls.polarHelper})
+        .name('polar coord overlay');
+      guiF.add(helper_gui_controls, 'targetHelper')
+        .onChange(()=>{targetHelper.visible = helper_gui_controls.targetHelper})
+        .name('target pointer');
+      guiF.add(helper_gui_controls, 'cameraHelper')
+        .onChange(()=>{cameraPerspectiveHelper.visible = helper_gui_controls.cameraHelper})
+        .name('camera outline');
+      guiF.add(helper_gui_controls, 'cameraPositionHelper')
+        .onChange(()=>{cameraPerspectivePositionHelper.visible = helper_gui_controls.cameraPositionHelper})
+        .name('camera height indicator');
+
+    }
   }
 
   // panel inst
