@@ -1,14 +1,12 @@
 import * as THREE from 'three'
 import { OrbitControls  } from 'https://unpkg.com/three@0.132.2/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/dat.gui.module'
-import { GLTFLoader } from 'https://unpkg.com/three@0.132.2/examples/jsm/loaders/GLTFLoader.js';
 import Stats from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/stats.module'
 import { Panel } from './src/panel.js';
-// import { Struct } from './src/structs.js';
+import { loadGLTF } from './src/GLTFLoader.js';
 // import { Vec2, Vec3, Eul3 } from './src/vectorUtils.js';
 
-// options
-let opt = {
+let opt = { // options
   camPersp: {fov: 20, x: 20, y: 10, z: 20},
   camOvral: {fov: 40, x: -20, y: 10, z: 20},
   targHlpr: {x: 0, y: 0, z: 0}
@@ -44,15 +42,13 @@ function main() {
   const cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective )
   const axesHelper = new THREE.AxesHelper(40);
   const polarHelper = new THREE.PolarGridHelper( 20, 16, 20, 64, 0x44dd44, 0x55bb55 )
-  // const targetHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1, 0xff0000 )
   const targetHelper = new THREE.AxesHelper(2)
   const cameraPerspectivePositionHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 1), 20, 0xff00ff )
   const stats = Stats()
+  const gui = new GUI();
   const controlerOrbit = new OrbitControls(cameraOverall, windowViewportOverall);
 
-
-  //random setups
-  {
+  { //random setups
     cameraOverall.position.set( opt.camOvral.x, opt.camOvral.y, opt.camOvral.z );
     cameraPerspective.position.set( opt.camPersp.x, opt.camPersp.y, opt.camPersp.z );
     cameraPerspective.lookAt( targetHelper.position.x, targetHelper.position.y, targetHelper.position.z )
@@ -69,15 +65,13 @@ function main() {
   }
 
   const target_model = ['static/blob/crane_full.glb', 'CraneFull']
-  loadGLTF(target_model[0], target_model[1])
+  loadGLTF(target_model[0]).then((res) => {
+    res.scene.name = target_model[1]
+    scene.add(res.scene)
+  })
 
-  // === setups
-  { // objects, geoms, meshes
-    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-    const geom = new THREE.BoxGeometry(1,1,1);
-    const cube = new THREE.Mesh( geom, material );
-    scene.add( cube )
-  }
+
+  // === objects, geoms, meshes setups
   {
     const planeSize = 50;
     const loader = new THREE.TextureLoader();
@@ -118,8 +112,7 @@ function main() {
     controlerOrbit.update();
   }
 
-  { // GUI inst
-    const gui = new GUI();
+  { // predefined GUI inst
     const update = () => {
         const dist = Math.sqrt(
           (cameraPerspective.position.x - targetHelper.position.x)**2 +
@@ -313,23 +306,7 @@ function main() {
     cameraPerspectivePositionHelper.setLength( cameraPerspective.position.y )
   }
 
-  function degToRad(x) { return THREE.MathUtils.degToRad(x) }
-
-  function loadGLTF(path, name) {
-    const loader = new GLTFLoader();
-    loader.load( path, 
-    ( gltf ) => {
-      gltf.scene.name = name
-      scene.add( gltf.scene );
-      // gltf.scene.getObjectByName( name ) 
-    }, 
-    ( xhr ) => {
-      console.log( 'Loading '+ path + ' ' + (xhr.loaded / xhr.total * 100) + '% loaded' )
-    }, 
-    ( e ) => {
-      console.error(e);
-    });
-  }
+  // function degToRad(x) { return THREE.MathUtils.degToRad(x) }
 
   // handler upon app exits/reload
   window.addEventListener("beforeunload", function(e){
