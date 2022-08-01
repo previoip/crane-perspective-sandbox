@@ -68,6 +68,19 @@ function main() {
   loadGLTF(target_model[0]).then((res) => {
     res.scene.name = target_model[1]
     scene.add(res.scene)
+    const craneTrailer = res.scene.getObjectByName('O_trailer')
+    const craneBox = craneTrailer.getObjectByName('O_box')
+    const guiF = gui.addFolder('Crane Control')
+    const crane_gui_controls = {
+      get t_rot() {return radToDeg(craneTrailer.rotation.y)},
+      set t_rot(v) {craneTrailer.rotation.set(craneTrailer.rotation.x, degToRad(v), craneTrailer.rotation.z)},
+      get b_rot() {return radToDeg(craneBox.rotation.y)},
+      set b_rot(v) {craneBox.rotation.set(craneBox.rotation.x, degToRad(v), craneBox.rotation.z)},
+      reset() {craneTrailer.rotation.set(0,0,0); craneBox.rotation.set(0,0,0)}
+    }
+    guiF.add(crane_gui_controls, 't_rot', -180, 180, 0.01).name('Tire Rot').listen()
+    guiF.add(crane_gui_controls, 'b_rot', -180, 180, 0.01).name('Box Rot').listen()
+    guiF.add(crane_gui_controls, 'reset')
   })
 
 
@@ -237,7 +250,6 @@ function main() {
       guiF.add(helper_gui_controls, 'cameraPositionHelper')
         .onChange(()=>{cameraPerspectivePositionHelper.visible = helper_gui_controls.cameraPositionHelper})
         .name('camera height indicator');
-
     }
   }
 
@@ -333,7 +345,8 @@ function main() {
     cameraPerspectivePositionHelper.setLength( cameraPerspective.position.y )
   }
 
-  // function degToRad(x) { return THREE.MathUtils.degToRad(x) }
+  function degToRad(x) { return THREE.MathUtils.degToRad(x) }
+  function radToDeg(x) { return THREE.MathUtils.radToDeg(x) }
 
   // handler upon app exits/reload
   window.addEventListener("beforeunload", function(e){
