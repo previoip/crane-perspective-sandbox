@@ -4,6 +4,7 @@ import { GUI } from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/dat.gui.m
 import Stats from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/stats.module'
 import { Panel } from './src/panel.js';
 import { loadGLTF } from './src/GLTFLoader.js';
+import { downloadTableAsCSV } from './src/tableAsCSV.js';
 // import { Vec2, Vec3, Eul3 } from './src/vectorUtils.js';
 
 let opt = { // options
@@ -70,16 +71,20 @@ function main() {
     scene.add(res.scene)
     const craneTrailer = res.scene.getObjectByName('O_trailer')
     const craneBox = craneTrailer.getObjectByName('O_box')
+    const craneBoom = craneBox.getObjectByName('O_boom')
     const guiF = gui.addFolder('Crane Control')
     const crane_gui_controls = {
-      get t_rot() {return radToDeg(craneTrailer.rotation.y)},
-      set t_rot(v) {craneTrailer.rotation.set(craneTrailer.rotation.x, degToRad(v), craneTrailer.rotation.z)},
-      get b_rot() {return radToDeg(craneBox.rotation.y)},
-      set b_rot(v) {craneBox.rotation.set(craneBox.rotation.x, degToRad(v), craneBox.rotation.z)},
-      reset() {craneTrailer.rotation.set(0,0,0); craneBox.rotation.set(0,0,0)}
+      get track_ang() {return radToDeg(craneTrailer.rotation.y)},
+      set track_ang(v) {craneTrailer.rotation.set(craneTrailer.rotation.x, degToRad(v), craneTrailer.rotation.z)},
+      get box_ang() {return radToDeg(craneBox.rotation.y)},
+      set box_ang(v) {craneBox.rotation.set(craneBox.rotation.x, degToRad(v), craneBox.rotation.z)},
+      get boom_ang() {return radToDeg(craneBoom.rotation.x)},
+      set boom_ang(v) {craneBoom.rotation.set(degToRad(v), craneBoom.rotation.y, craneBoom.rotation.z)},
+      reset() {craneTrailer.rotation.set(0,0,0); craneBox.rotation.set(0,0,0); craneBoom.rotation.set(0,0,0)}
     }
-    guiF.add(crane_gui_controls, 't_rot', -180, 180, 0.01).name('Tire Rot').listen()
-    guiF.add(crane_gui_controls, 'b_rot', -180, 180, 0.01).name('Box Rot').listen()
+    guiF.add(crane_gui_controls, 'track_ang', -180, 180, 0.01).name('Tire Rot').listen()
+    guiF.add(crane_gui_controls, 'box_ang', -180, 180).name('Box Rot').listen()
+    // guiF.add(crane_gui_controls, 'boom_ang', -30, 60, 0.01).name('Box Rot').listen()
     guiF.add(crane_gui_controls, 'reset')
   })
 

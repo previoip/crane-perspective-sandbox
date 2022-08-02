@@ -19,11 +19,13 @@ class Base3 {
   }
 
   setArr(a = [0, 0, 0]) {
-    this.set(a[0], a[1], a[2])
+    this.set(a[0], a[1], a[2]);
+    return this
   }
 
   offsetArr(a = [0, 0, 0]) {
-    this.offset(a[0], a[1], a[2])
+    this.offset(a[0], a[1], a[2]);
+    return this
   }
 }
 
@@ -46,24 +48,26 @@ class Base2 {
   }
 
   setArr(a = [0, 0]) {
-    this.set(a[0], a[1])
+    this.set(a[0], a[1]);
+    return this
   }
 
   offsetArr(a = [0, 0]) {
-    this.offset(a[0], a[1])
+    this.offset(a[0], a[1]);
+    return this
   }
 }
 
 // impl
 class Vec3 extends Base3 {
-  setPolar(radius, theta, gamma) {
-    const [x,y,z] = this.#polarToCartesian(radius, theta, gamma)
+  setPolar(radius, theta, phi) {
+    const [x,y,z] = this.#polarToCartesian(radius, theta, phi)
     this.set(x,y,z)
     return this
   }
 
-  offsetPolar(radius, theta, gamma) {
-    const [x,y,z] = this.#polarToCartesian(radius, theta, gamma)
+  offsetPolar(radius, theta, phi) {
+    const [x,y,z] = this.#polarToCartesian(radius, theta, phi)
     this.offset(x,y,z)
     return this
   }
@@ -76,11 +80,11 @@ class Vec3 extends Base3 {
     return Math.sqrt(this.x**2 + this.y**2 + this.z**2)
   }
 
-  #polarToCartesian(radius, theta, gamma) {
+  #polarToCartesian(radius, theta, phi) {
     return [
-    /*x*/ radius * Math.cos(theta) * Math.cos(gamma),
-    /*y*/ radius * Math.sin(theta) * Math.cos(gamma),
-    /*z*/ radius * Math.sin(gamma)
+    /*x*/ radius * Math.cos(theta) * Math.cos(phi),
+    /*y*/ radius * Math.sin(theta) * Math.cos(phi),
+    /*z*/ radius * Math.sin(phi)
     ]
   }
 
