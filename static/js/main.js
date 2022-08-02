@@ -45,7 +45,7 @@ function main() {
   const targetHelper = new THREE.AxesHelper(2)
   const cameraPerspectivePositionHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 1), 20, 0xff00ff )
   const stats = Stats()
-  const gui = new GUI();
+  const gui = new GUI({ width: 200 });
   const controlerOrbit = new OrbitControls(cameraOverall, windowViewportOverall);
 
   { //random setups
@@ -146,18 +146,18 @@ function main() {
           cameraPerspective.fov = v; 
           cameraPerspectiveHelper.update();
         },
-        get posx() {return cameraPerspective.position.x},
-        set posx(v) {
+        get Cx() {return cameraPerspective.position.x},
+        set Cx(v) {
           cameraPerspective.position.x = v; 
           update()
         },
-        get posy() {return cameraPerspective.position.y},
-        set posy(v) {
+        get Cy() {return cameraPerspective.position.y},
+        set Cy(v) {
           cameraPerspective.position.y = v; 
           update()
         },
-        get posz() {return cameraPerspective.position.z},
-        set posz(v) {
+        get Cz() {return cameraPerspective.position.z},
+        set Cz(v) {
           cameraPerspective.position.z = v; 
           update()
         },
@@ -171,27 +171,26 @@ function main() {
       }  
       const guiF = gui.addFolder( 'Camera Control' )
       guiF.add(cameraPerspective_gui_controls, 'fov',  1,  120, 0.01).listen()
-      guiF.add(cameraPerspective_gui_controls, 'posx', -40, 40, 0.01).name('x (m)').listen()
-      guiF.add(cameraPerspective_gui_controls, 'posy', 0,   20, 0.01).name('y (m)').listen()
-      guiF.add(cameraPerspective_gui_controls, 'posz', -40, 40, 0.01).name('z (m)').listen()
+      guiF.add(cameraPerspective_gui_controls, 'Cx', -40, 40, 0.01).name('x (m)').listen()
+      guiF.add(cameraPerspective_gui_controls, 'Cy', 0,   20, 0.01).name('y (m)').listen()
+      guiF.add(cameraPerspective_gui_controls, 'Cz', -40, 40, 0.01).name('z (m)').listen()
       guiF.add(cameraPerspective_gui_controls, 'reset')
-      guiF.open()  
     }
 
     { // gui - camera offset scope
       const target_gui_controls = {
-        get posx() {return targetHelper.position.x},
-        set posx(v) {
+        get Cx() {return targetHelper.position.x},
+        set Cx(v) {
           targetHelper.position.x = v; 
           update()
         },
-        get posy() {return targetHelper.position.y},
-        set posy(v) {
+        get Cy() {return targetHelper.position.y},
+        set Cy(v) {
           targetHelper.position.y = v; 
           update()
         },
-        get posz() {return targetHelper.position.z},
-        set posz(v) {
+        get Cz() {return targetHelper.position.z},
+        set Cz(v) {
           targetHelper.position.z = v; 
           update()
         },
@@ -203,9 +202,9 @@ function main() {
         }
       }
       const guiF = gui.addFolder( 'Camera Target Offset Control' )
-      guiF.add(target_gui_controls, 'posx', -10, 10, 0.01).name('x (m)').listen()
-      guiF.add(target_gui_controls, 'posy',  0,  10, 0.01).name('y (m)').listen()
-      guiF.add(target_gui_controls, 'posz', -10, 10, 0.01).name('z (m)').listen()
+      guiF.add(target_gui_controls, 'Cx', -10, 10, 0.01).name('x (m)').listen()
+      guiF.add(target_gui_controls, 'Cy',  0,  10, 0.01).name('y (m)').listen()
+      guiF.add(target_gui_controls, 'Cz', -10, 10, 0.01).name('z (m)').listen()
       guiF.add(target_gui_controls, 'reset')  
     }
 
@@ -349,7 +348,7 @@ function main() {
   function radToDeg(x) { return THREE.MathUtils.radToDeg(x) }
 
   // handler upon app exits/reload
-  window.addEventListener("beforeunload", function(e){
+  window.addEventListener("beforeunload", ()=>{
     // save opt
     opt = {
       camPersp: {
@@ -369,8 +368,8 @@ function main() {
         y: targetHelper.position.y, 
         z: targetHelper.position.z
       }
-    }
-    this.localStorage.setItem(localStorageName, JSON.stringify(opt))
+    };
+    localStorage.setItem(localStorageName, JSON.stringify(opt))
   }, false)
 
   mainloop()
