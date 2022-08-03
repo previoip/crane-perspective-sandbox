@@ -4,7 +4,6 @@ import { GUI } from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/dat.gui.m
 import Stats from 'https://unpkg.com/three@0.132.2/examples/jsm/libs/stats.module'
 import { Panel } from './src/panel.js';
 import { loadGLTF } from './src/GLTFLoader.js';
-import { downloadTableAsCSV } from './src/tableAsCSV.js';
 // import { Vec2, Vec3, Eul3 } from './src/vectorUtils.js';
 
 let opt = { // options
@@ -69,9 +68,13 @@ function main() {
   loadGLTF(target_model[0]).then((res) => {
     res.scene.name = target_model[1]
     scene.add(res.scene)
-    const craneTrailer = res.scene.getObjectByName('O_trailer')
-    const craneBox = craneTrailer.getObjectByName('O_box')
-    const craneBoom = craneBox.getObjectByName('O_boom')
+    const craneTrailer = res.scene.getObjectByName('mesh_Trail')
+    const craneBox = craneTrailer.getObjectByName('mesh_Box')
+    const craneBoom = craneTrailer.getObjectByName('mesh_BoomPivot').getObjectByName('mesh_BoomMast')
+    const boundingBoxes = getChild3DObjectsByPrefix(craneTrailer, 'bbox')
+    boundingBoxes.forEach(e => {
+      e.visible = false;
+    })
     const guiF = gui.addFolder('Crane Control')
     const crane_gui_controls = {
       get track_ang() {return radToDeg(craneTrailer.rotation.y)},
@@ -351,6 +354,21 @@ function main() {
 
   function degToRad(x) { return THREE.MathUtils.degToRad(x) }
   function radToDeg(x) { return THREE.MathUtils.radToDeg(x) }
+  function getChild3DObjectsByPrefix( Object, prefix ) {
+    // recursively get child of nodes if has prefix
+    var li = [];
+    Object.children.forEach( e => { 
+      if (e.name.startsWith(prefix)) {
+        li.push(e)
+      }
+      else {
+        getChild3DObjectsByPrefix(e, prefix).forEach( f => {
+          li.push(f)
+        })
+      }
+     })
+     return li
+  }
 
   // handler upon app exits/reload
   window.addEventListener("beforeunload", ()=>{
