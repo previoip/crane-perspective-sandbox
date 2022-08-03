@@ -45,8 +45,15 @@ function main() {
   const targetHelper = new THREE.AxesHelper(2)
   const cameraPerspectivePositionHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 1), 20, 0xff00ff )
   const stats = Stats()
-  const gui = new GUI({ width: 200 });
   const controlerOrbit = new OrbitControls(cameraOverall, windowViewportOverall);
+
+  // GUIs
+  const gui = new GUI({ width: 200 });
+  const guiFolder_ProjectionCam  = gui.addFolder( 'Camera Control' )
+  const guiFolder_TargetOffset   = gui.addFolder( 'Camera Target Offset Control' )
+  const guiFolder_PreviewCamera  = gui.addFolder( 'Preview Camera Control' )
+  const guiFolder_Overlays       = gui.addFolder( 'Overlay Visibility' )
+  const guiFolder_CraneControl   = gui.addFolder( 'Crane Control' )
 
   { //random setups
     cameraOverall.position.set( opt.camOvral.x, opt.camOvral.y, opt.camOvral.z );
@@ -74,8 +81,9 @@ function main() {
     const boundingBoxes = getChild3DObjectsByPrefix(craneTrailer, 'bbox')
     boundingBoxes.forEach(e => {
       e.visible = false;
+      e.material.wireframe = true
+      console.log(e)
     })
-    const guiF = gui.addFolder('Crane Control')
     const crane_gui_controls = {
       get track_ang() {return radToDeg(craneTrailer.rotation.y)},
       set track_ang(v) {craneTrailer.rotation.set(craneTrailer.rotation.x, degToRad(v), craneTrailer.rotation.z)},
@@ -85,10 +93,10 @@ function main() {
       set boom_ang(v) {craneBoom.rotation.set(degToRad(v), craneBoom.rotation.y, craneBoom.rotation.z)},
       reset() {craneTrailer.rotation.set(0,0,0); craneBox.rotation.set(0,0,0); craneBoom.rotation.set(0,0,0)}
     }
-    guiF.add(crane_gui_controls, 'track_ang', -180, 180, 0.01).name('Tire Rot').listen()
-    guiF.add(crane_gui_controls, 'box_ang', -180, 180).name('Box Rot').listen()
+    guiFolder_CraneControl.add(crane_gui_controls, 'track_ang', -180, 180, 0.01).name('Tire Rot').listen()
+    guiFolder_CraneControl.add(crane_gui_controls, 'box_ang', -180, 180).name('Box Rot').listen()
     // guiF.add(crane_gui_controls, 'boom_ang', -30, 60, 0.01).name('Box Rot').listen()
-    guiF.add(crane_gui_controls, 'reset')
+    guiFolder_CraneControl.add(crane_gui_controls, 'reset')
   })
 
 
@@ -177,12 +185,11 @@ function main() {
           update()
         }
       }  
-      const guiF = gui.addFolder( 'Camera Control' )
-      guiF.add(cameraPerspective_gui_controls, 'fov',  1,  120, 0.01).listen()
-      guiF.add(cameraPerspective_gui_controls, 'Cx', -40, 40, 0.01).name('x (m)').listen()
-      guiF.add(cameraPerspective_gui_controls, 'Cy', 0,   20, 0.01).name('y (m)').listen()
-      guiF.add(cameraPerspective_gui_controls, 'Cz', -40, 40, 0.01).name('z (m)').listen()
-      guiF.add(cameraPerspective_gui_controls, 'reset')
+      guiFolder_ProjectionCam.add(cameraPerspective_gui_controls, 'fov',  1,  120, 0.01).listen()
+      guiFolder_ProjectionCam.add(cameraPerspective_gui_controls, 'Cx', -40, 40, 0.01).name('x (m)').listen()
+      guiFolder_ProjectionCam.add(cameraPerspective_gui_controls, 'Cy', 0,   20, 0.01).name('y (m)').listen()
+      guiFolder_ProjectionCam.add(cameraPerspective_gui_controls, 'Cz', -40, 40, 0.01).name('z (m)').listen()
+      guiFolder_ProjectionCam.add(cameraPerspective_gui_controls, 'reset')
     }
 
     { // gui - camera offset scope
@@ -209,11 +216,10 @@ function main() {
           update()
         }
       }
-      const guiF = gui.addFolder( 'Camera Target Offset Control' )
-      guiF.add(target_gui_controls, 'Cx', -10, 10, 0.01).name('x (m)').listen()
-      guiF.add(target_gui_controls, 'Cy',  0,  10, 0.01).name('y (m)').listen()
-      guiF.add(target_gui_controls, 'Cz', -10, 10, 0.01).name('z (m)').listen()
-      guiF.add(target_gui_controls, 'reset')  
+      guiFolder_TargetOffset.add(target_gui_controls, 'Cx', -10, 10, 0.01).name('x (m)').listen()
+      guiFolder_TargetOffset.add(target_gui_controls, 'Cy',  0,  10, 0.01).name('y (m)').listen()
+      guiFolder_TargetOffset.add(target_gui_controls, 'Cz', -10, 10, 0.01).name('z (m)').listen()
+      guiFolder_TargetOffset.add(target_gui_controls, 'reset')  
     }
 
     { // gui - camera preview scope
@@ -229,8 +235,7 @@ function main() {
           controlerOrbit.update()
         }
       }
-      const guiF = gui.addFolder( 'Preview Camera Control' )
-      guiF.add(cameraOverall_gui_controls, 'reset')  
+      guiFolder_PreviewCamera.add(cameraOverall_gui_controls, 'reset')  
     }
 
     { // gui - helpers visibility
@@ -241,20 +246,19 @@ function main() {
         cameraHelper: true,
         cameraPositionHelper: true,
       }
-      const guiF = gui.addFolder( 'Overlay Visibility' )
-      guiF.add(helper_gui_controls, 'axesHelper')
+      guiFolder_Overlays.add(helper_gui_controls, 'axesHelper')
         .onChange(()=>{axesHelper.visible = helper_gui_controls.axesHelper})
         .name('origin axis');
-      guiF.add(helper_gui_controls, 'polarHelper')
+      guiFolder_Overlays.add(helper_gui_controls, 'polarHelper')
         .onChange(()=>{polarHelper.visible = helper_gui_controls.polarHelper})
         .name('polar coord overlay');
-      guiF.add(helper_gui_controls, 'targetHelper')
+      guiFolder_Overlays.add(helper_gui_controls, 'targetHelper')
         .onChange(()=>{targetHelper.visible = helper_gui_controls.targetHelper})
         .name('target pointer');
-      guiF.add(helper_gui_controls, 'cameraHelper')
+      guiFolder_Overlays.add(helper_gui_controls, 'cameraHelper')
         .onChange(()=>{cameraPerspectiveHelper.visible = helper_gui_controls.cameraHelper})
         .name('camera outline');
-      guiF.add(helper_gui_controls, 'cameraPositionHelper')
+      guiFolder_Overlays.add(helper_gui_controls, 'cameraPositionHelper')
         .onChange(()=>{cameraPerspectivePositionHelper.visible = helper_gui_controls.cameraPositionHelper})
         .name('camera height indicator');
     }
@@ -354,10 +358,10 @@ function main() {
 
   function degToRad(x) { return THREE.MathUtils.degToRad(x) }
   function radToDeg(x) { return THREE.MathUtils.radToDeg(x) }
-  function getChild3DObjectsByPrefix( Object, prefix ) {
+  function getChild3DObjectsByPrefix( obj, prefix ) {
     // recursively get child of nodes if has prefix
     var li = [];
-    Object.children.forEach( e => { 
+    obj.children.forEach( e => { 
       if (e.name.startsWith(prefix)) {
         li.push(e)
       }
