@@ -37,8 +37,8 @@ function main() {
   // THREE inits
   const scene = new THREE.Scene();
   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  const cameraOverall = new THREE.PerspectiveCamera( opt.camOvral.fov, screen_aspect_ratio, 0.1, 300 )
-  const cameraPerspective = new THREE.PerspectiveCamera( opt.camPersp.fov, screen_aspect_ratio, 0.1, 100 )
+  const cameraOverall = new THREE.PerspectiveCamera( opt.camOvral.fov, screen_aspect_ratio, 1, 300 )
+  const cameraPerspective = new THREE.PerspectiveCamera( opt.camPersp.fov, screen_aspect_ratio, 1, 100 )
   const cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective )
   const axesHelper = new THREE.AxesHelper(40);
   const polarHelper = new THREE.PolarGridHelper( 20, 16, 20, 64, 0x44dd44, 0x55bb55 )
@@ -46,44 +46,56 @@ function main() {
   const cameraPerspectivePositionHelper = new THREE.ArrowHelper( new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 1), 20, 0xff00ff )
   const stats = Stats()
   const controlerOrbit = new OrbitControls(cameraOverall, windowViewportOverall);
+  var CraneBBoxPrimitives = []
 
   // GUIs
   const gui = new GUI({ width: 200 });
   const guiFolder_ProjectionCam  = gui.addFolder( 'Camera Control' )
   const guiFolder_TargetOffset   = gui.addFolder( 'Camera Target Offset Control' )
-  const guiFolder_PreviewCamera  = gui.addFolder( 'Preview Camera Control' )
+  const guiFolder_PreviewCamera  = gui.addFolder( 'Preview Window Control' )
   const guiFolder_Overlays       = gui.addFolder( 'Overlay Visibility' )
   const guiFolder_CraneControl   = gui.addFolder( 'Crane Control' )
 
   { //random setups
     cameraOverall.position.set( opt.camOvral.x, opt.camOvral.y, opt.camOvral.z );
     cameraPerspective.position.set( opt.camPersp.x, opt.camPersp.y, opt.camPersp.z );
-    cameraPerspective.lookAt( targetHelper.position.x, targetHelper.position.y, targetHelper.position.z )
-    polarHelper.position.set(0, .03, 0)
-    axesHelper.position.set(0, .05, 0)
+    cameraPerspective.lookAt( targetHelper.position.x, targetHelper.position.y, targetHelper.position.z)
+    renderer.setPixelRatio( window.devicePixelRatio );
+    // cameraPerspectiveHelper.frustumCulled = false
+    // console.log(cameraPerspectiveHelper)
+    polarHelper.position.set(0, .03, 0);
+    axesHelper.position.set(0, .05, 0);
     scene.add( cameraPerspectiveHelper );
-    scene.add( axesHelper )
+    scene.add( axesHelper );
     scene.add( polarHelper );
     scene.add( targetHelper );
-    scene.add( cameraPerspectivePositionHelper )
+    scene.add( cameraPerspectivePositionHelper );
     scene.background = new THREE.Color( '#0f0f50' );
-    document.body.appendChild( stats.dom );
+    // document.body.appendChild( stats.dom );
     updateCameraPerspectivePositionHelper();
   }
 
+  // loads Crane 3D Object
   const target_model = ['static/blob/crane_full.glb', 'CraneFull']
   loadGLTF(target_model[0]).then((res) => {
     res.scene.name = target_model[1]
-    scene.add(res.scene)
-    const craneTrailer = res.scene.getObjectByName('mesh_Trail')
-    const craneBox = craneTrailer.getObjectByName('mesh_Box')
+    scene.add(res.scene);
+    const craneTrailer = res.scene.getObjectByName('mesh_Trail');
+    const craneBox = craneTrailer.getObjectByName('mesh_Box');
     const craneBoom = craneTrailer.getObjectByName('mesh_BoomPivot').getObjectByName('mesh_BoomMast')
-    const boundingBoxes = getChild3DObjectsByPrefix(craneTrailer, 'bbox')
-    boundingBoxes.forEach(e => {
-      e.visible = false;
-      e.material.wireframe = true
-      console.log(e)
-    })
+    const CraneBBOX = getChild3DObjectsByPrefix(craneTrailer, 'bbox');
+    CraneBBOX.forEach(e => {
+      e.material.transparent = true;
+      e.material.opacity = .2;
+      const [mid, dim] = get3DBBoxDimension( e )
+      const boundingBox2D = construct2DBoundingBox(Math.max(dim.max.x - dim.min.x, dim.max.z - dim.min.z), dim.max.y - dim.min.y, '2Dbbox_' + e.name)
+      var boundingBox2DworldPos = new THREE.Vector3()
+      e.getWorldPosition( boundingBox2DworldPos )
+      boundingBox2D.position.set(mid.x, mid.y, mid.z)
+      boundingBox2D.lookAt( cameraPerspective.position )
+      e.add(boundingBox2D)
+      }
+    )
     const crane_gui_controls = {
       get track_ang() {return radToDeg(craneTrailer.rotation.y)},
       set track_ang(v) {craneTrailer.rotation.set(craneTrailer.rotation.x, degToRad(v), craneTrailer.rotation.z)},
@@ -119,6 +131,11 @@ function main() {
     const mesh = new THREE.Mesh(planeGeo, planeMat);
     mesh.rotation.x = Math.PI * -.5;
     scene.add(mesh);
+
+    const gui_control = {a: true}
+    guiFolder_Overlays.add(gui_control, 'a')
+    .onChange(()=>{mesh.visible = gui_control.a})
+    .name('Ground');
   }
   {
     const color = 0xFFFFFF;
@@ -133,7 +150,6 @@ function main() {
     scene.add(light2);
     scene.add(light2.target);
   }
-
   { // orbit controls
     controlerOrbit.target.set(0, 0, 0);
     controlerOrbit.enableDamping = true
@@ -147,7 +163,7 @@ function main() {
           (cameraPerspective.position.x - targetHelper.position.x)**2 +
           (cameraPerspective.position.y - targetHelper.position.y)**2 +
           (cameraPerspective.position.z - targetHelper.position.z)**2)
-        cameraPerspective.near = Math.max(dist - 50, 0.1)
+        // cameraPerspective.near = Math.max(dist - 50, 0.1)
         cameraPerspective.far  = Math.max(dist + 50, 1)
         cameraPerspective.lookAt(targetHelper.position.x, targetHelper.position.y, targetHelper.position.z);
         cameraPerspective.updateProjectionMatrix()
@@ -245,6 +261,7 @@ function main() {
         targetHelper: true,
         cameraHelper: true,
         cameraPositionHelper: true,
+        checkerboardPlane: true,
       }
       guiFolder_Overlays.add(helper_gui_controls, 'axesHelper')
         .onChange(()=>{axesHelper.visible = helper_gui_controls.axesHelper})
@@ -305,6 +322,11 @@ function main() {
     // processes that updates per counterLimit framecycles
     if (counter%counterLimit == 0) {
       counter = 0
+      {
+        CraneBBoxPrimitives.forEach( e => {
+          // todo
+        } )
+      }
       { // updates sceneStat panel
         Object.entries(sceneStatsPanelFields).forEach( e => {
           const [k, v] = e
@@ -357,7 +379,9 @@ function main() {
   }
 
   function degToRad(x) { return THREE.MathUtils.degToRad(x) }
+
   function radToDeg(x) { return THREE.MathUtils.radToDeg(x) }
+
   function getChild3DObjectsByPrefix( obj, prefix ) {
     // recursively get child of nodes if has prefix
     var li = [];
@@ -373,6 +397,46 @@ function main() {
      })
      return li
   }
+
+  function construct2DBoundingBox(dx, dy, name="", color = 0x00ffff) {
+    // pseudo bounding box
+    var points = []
+    points.push( new THREE.Vector3(-dx/2, -dy/2,  0));
+    points.push( new THREE.Vector3(-dx/2,  dy/2,  0));
+    points.push( new THREE.Vector3( dx/2,  dy/2,  0));
+    points.push( new THREE.Vector3( dx/2, -dy/2,  0));
+    points.push( new THREE.Vector3(-dx/2, -dy/2,  0));
+    const geom = new THREE.BufferGeometry().setFromPoints( points );
+    const mat = new THREE.LineBasicMaterial( { color: color } );
+    mat.transparent = true;
+    mat.opacity = .6
+    const line = new THREE.Line( geom, mat );
+    line.name = name
+    return line
+  }
+
+  function get3DBBoxDimension(obj3D) {
+    const center = new THREE.Vector3();
+    const geom = obj3D.geometry;
+    // geom.computeBoundingBox();
+    const BBoxSize = {
+      max: new THREE.Vector3(
+        geom.boundingBox.max.x,
+        geom.boundingBox.max.y,
+        geom.boundingBox.max.z
+      ),
+      min: new THREE.Vector3(
+        geom.boundingBox.min.x,
+        geom.boundingBox.min.y,
+        geom.boundingBox.min.z
+      ),
+    }
+    obj3D.localToWorld( center );
+    center.x = (BBoxSize.max.x + BBoxSize.min.x) / 2;
+    center.y = (BBoxSize.max.y + BBoxSize.min.y) / 2;
+    center.z = (BBoxSize.max.z + BBoxSize.min.z) / 2;
+    return [center, BBoxSize];
+}
 
   // handler upon app exits/reload
   window.addEventListener("beforeunload", ()=>{

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<meta name='viewport' content='width=device-width'/>
 	<link rel="stylesheet" href="static/css/style.css">
 	<title>Crane Perspective Playground</title>
 </head>
@@ -9,8 +10,16 @@
 	<script type="importmap">{"imports": {"three": "https://unpkg.com/three@0.132.2/build/three.module.js"}}</script>
 	<canvas id="canvas"></canvas>
 	<div id="viewports">
-		<div id="overall" tabindex="1"></div>
-		<div id="projection" tabindex="2"></div>
+		<div id="overall" tabindex="1">
+			<div class="desc">
+				<h2>Preview</h2>
+			</div>
+		</div>
+		<div id="projection" tabindex="2">
+			<div class="desc">
+				<h2>CCTV Camera Viewport</h2>
+			</div>
+		</div>
 	</div>
 	</div>
 	<script type="module" src="static/js/main.js"></script>
